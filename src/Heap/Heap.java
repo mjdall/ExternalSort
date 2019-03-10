@@ -11,13 +11,49 @@ public class Heap <T extends Comparable<T>> {
         this.comparer = comparisonFunction;
         this.heap = rawArray;
         this.heapSize = rawArray.length;
+        buildHeap();
     }
 
     private int getParentIndex (int index) { return (index - 1) / 2; }
 
     private int getLeftChildIndex (int index) { return index * 2 + 1; }
 
-    private int getRightChildIndex (int index) { return index * 2 + 2; }
+    private boolean checkIndex (int index) { return index < heapSize; }
+
+    public int getHeapSize () { return heapSize; }
+
+    public T[] getHeap () { return heap; }
+
+    private void buildHeap () {
+        int startFrom = heapSize / 2 - 1;
+        for (int i = startFrom; i >= 0; i--) {
+            heapify(i);
+        }
+    }
+
+    private void heapify (int fromIndex) {
+        T curr = heap[fromIndex];
+        int lIdx = getLeftChildIndex(fromIndex);
+        int rIdx = lIdx + 1;
+
+        if (!checkIndex(lIdx)) { return; }
+
+        T leftChild = heap[lIdx];
+        int leftComparison = comparer.compare(curr, leftChild);
+        int largest = leftComparison;
+
+        if (checkIndex(rIdx)) {
+            T rightChild = heap[rIdx];
+            largest = Math.max(leftComparison, comparer.compare(curr, rightChild));
+        }
+
+        if (largest <= 0) { return; }
+
+        int modifiedIndex = largest == leftComparison ? lIdx : rIdx;
+        heap[fromIndex] = heap[modifiedIndex];
+        heap[modifiedIndex] = curr;
+        heapify(modifiedIndex);
+    }
 
     private void swapHeadAndTail () {
         // error check?
@@ -26,18 +62,16 @@ public class Heap <T extends Comparable<T>> {
         heap[heapSize - 1] = head;
     }
 
-    /**
-     *
-     */
     private int trySwapUp (int nodeIndex) {
         if (nodeIndex <= 0) { return -1; }
 
         int parentIndex = getParentIndex(nodeIndex);
         T currentItem = heap[nodeIndex];
         T parentItem = heap[parentIndex];
-        if (comparer.compare(parentItem, currentItem) > 0) { return -1; }
 
         // if the currentItem has a higher priority than it's parent
+        if (comparer.compare(parentItem, currentItem) <= 0) { return -1; }
+
         heap[parentIndex] = currentItem;
         heap[nodeIndex] = parentItem;
         return parentIndex;
@@ -47,39 +81,49 @@ public class Heap <T extends Comparable<T>> {
         // if it's at the bottom or can't be moved
         if (nodeIndex == heapSize - 1 || nodeIndex < 0) { return -1; }
         int lIdx = getLeftChildIndex(nodeIndex);
-        int rIdx = getRightChildIndex(nodeIndex);
+        int rIdx = lIdx + 1;
+
+        // no children
+        if (!checkIndex(lIdx)) { return -1; }
 
         T currNode = heap[nodeIndex];
         T leftChild = heap[lIdx];
-        T rightChild = heap[rIdx];
 
         int leftComparison = comparer.compare(currNode, leftChild);
-
-        // get the smallest of the comparison values
-        int smallest = Math.min(leftComparison, comparer.compare(currNode, rightChild));
+        int highestPriority = leftComparison;
+        // if we have a left and a right child
+        if (checkIndex(rIdx)) {
+            T rightChild = heap[rIdx];
+            highestPriority = Math.max(highestPriority, comparer.compare(currNode, rightChild));
+        }
 
         // if smallest < 0 then the current item has less priority
-        if (smallest >= 0) { return -1; }
+        if (highestPriority <= 0) { return -1; }
 
         // swap the values
-        int modifiedIndex = smallest == leftComparison ? lIdx : rIdx;
+        int modifiedIndex = highestPriority == leftComparison ? lIdx : rIdx;
         heap[nodeIndex] = heap[modifiedIndex];
         heap[modifiedIndex] = currNode;
-
         return modifiedIndex;
     }
 
     public T remove () {
         if (heapSize == 0) { return null; }
         swapHeadAndTail();
-        int insIndex = 0;
-        while (insIndex > 0) { insIndex = trySwapDown(insIndex); }
         heapSize--;
+        int insIndex = 0;
+        while (insIndex >= 0) { insIndex = trySwapDown(insIndex); }
         return heap[heapSize];
     }
 
-    public T replace (T newItem) {
-        return newItem;
+    public void hide () {
+        T curr = remove();
+        heap[heapSize] = curr;
+    }
+
+    public T check () {
+        if (heapSize == 0) { return null; }
+        return heap[0];
     }
 
     public boolean insert (T newItem) {
@@ -92,8 +136,12 @@ public class Heap <T extends Comparable<T>> {
         return true;
     }
 
-    private void heapify () {
-        // assume everything is unsorted, put it in order
+    public T replace (T newItem) {
+        if (heapSize == 0) { return null; }
+        int insertAt = 0;
+        T curr = heap[insertAt];
+        heap[insertAt] = newItem;
+        while (insertAt >= 0) { insertAt = trySwapDown(insertAt); }
+        return curr;
     }
-
 }
