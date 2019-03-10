@@ -226,11 +226,96 @@ class PolyMerge {
         }
     }
 
-    private static int runMergeIteration(List<File> allFiles, List<File> activeFiles, int runs) {
+    private static void loadNewRun(List<File> files, BufferedReader[] inputReaders, String[] lastEntryArray, int outputIndex) throws IOException {
+        for(int i = 0; i < files.size(); i++) {
+            if(i == outputIndex) {
+                // Close old input if changed
+                if(inputReaders[i] != null) {
+                    inputReaders[i].close();
+                }
+                inputReaders[i] = null;
+                lastEntryArray[i] = null;
+            } else {
+                if(inputReaders[i] == null) {
+                    // Open file if null
+                    inputReaders[i] = openReadFile(files.get(i));
+                }
+                // Read next entry
+                lastEntryArray[i] = inputReaders[i].readLine();
+            }
+        }
+    }
 
+    private static int outputSmallest(String[] lastEntryArray, BufferedWriter output, int outputIdx) throws IOException {
+        int smallestIdx = outputIdx == 0 ? 1 : 0;
+        for(int i = 1; i < lastEntryArray.length; i++) {
+            if(i == outputIdx || lastEntryArray[i].equals("")) {
+                continue;
+            }
+            if(lastEntryArray[i].compareTo(lastEntryArray[smallestIdx]) < 0 || lastEntryArray[smallestIdx].equals("")) {
+                smallestIdx = i;
+            }
+        }
+        if(lastEntryArray[smallestIdx].equals("")) {
+            return -1;
+        }
+        output.write(lastEntryArray[smallestIdx] + "\n");
+        return smallestIdx;
+    }
 
+    private static void runPolyphaseMerge(List<File> files) {
+        // Last file is first output file
+        int numFiles = files.size();
+        int outputIndex = numFiles - 1;
+        int numIterations = 0;
+        String[] lastEntryArray = new String[numFiles];
+        BufferedReader[] inputReaders = new BufferedReader[numFiles];
+        try {
+            // Loop while there are runs remaining to process
+            int nextOutput = (outputIndex + 1) % numFiles;
+            do {
+                loadNewRun(files, inputReaders, lastEntryArray, outputIndex);
+                BufferedWriter output = openAndClearFile(files.get(outputIndex));
 
-        return runs;
+                // Loop until next file runs out of runs
+                while (true) {
+                    int smallestIdx = outputSmallest(lastEntryArray, output, outputIndex);
+                    if(smallestIdx == -1) {
+                        // All files have reached the end of their runs
+                        // Write new line to signify run end in output file
+                        output.write("\n");
+                        if(!inputReaders[nextOutput].ready()) {
+                            // Completed all runs for this iteration
+                            // Switch output files
+                            break;
+                        }
+                        // Process next run
+                        loadNewRun(files, inputReaders, lastEntryArray, outputIndex);
+                    } else {
+                        // Load next element in the run
+                        lastEntryArray[smallestIdx] = inputReaders[smallestIdx].readLine();
+                    }
+                }
+                // Number of iterations it took to complete read
+                numIterations++;
+                outputIndex = nextOutput;
+                nextOutput = (outputIndex + 1) % numFiles;
+                output.close();
+            } while (inputReaders[nextOutput].ready());
+
+            // Merged all runs
+            // Get output file
+            outputIndex = ( outputIndex + numFiles - 1 ) % numFiles;
+            BufferedReader reader = openReadFile(files.get(outputIndex));
+            while (reader.ready()) {
+                System.out.println(reader.readLine());
+            }
+            System.out.println();
+            System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
+        } catch (IOException e) {
+            System.err.println("Error while running polyphase merge.\n\n" + e.getMessage());
+            System.exit(1);
+        }
     }
 
     public static void main (String[] args) {
@@ -255,12 +340,8 @@ class PolyMerge {
         // Create temporary files
         List<File> files = getTemporaryOutputFiles( numFiles );
         // Load input into output files
-        int runs = loadInputFiles( files );
+        loadInputFiles( files );
 
-        // List of currently active files
-        List<File> activeFiles = files.subList(0, files.size() - 1);
-//        while( runs > 0 ) {
-//            runs = runMergeIteration( files, activeFiles, runs );
-//        }
+        runPolyphaseMerge(files);
     }
 }
