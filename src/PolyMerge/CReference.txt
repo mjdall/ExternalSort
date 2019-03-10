@@ -1,0 +1,96 @@
+    merge(int out)
+    {
+    	  int i, isml;
+    	  typekey lastout;
+    	  extern struct rec LastRec[];
+    	  extern char FilStat[];
+
+    	  lastout = MinimumKey;
+    	  LastRec[0].k = MaximumKey;
+    	  while (TRUE) {
+    	    isml = 0;
+    	    for (i = 1; i <= maxfiles; i++)
+    	      if (FilStat[i] == 'i' && !Eof(i) &&
+    	        LastRec[i].k >= lastout &&
+    	        LastRec[i].k < LastRec[isml].k)
+    	        isml = i;
+    	    if (isml == 0) {
+    	      for (i = 1; i <= maxfiles; i++)
+    	        if (FilStat[i] == 'i' && !Eof(i)) return (0);
+    	      return ('done');
+    	    }
+    	    WriteFile(out, LastRec[isml]);
+    	    lastout = LastRec[isml].k;
+    	    LastRec[isml] = ReadFile(isml);
+    	  }
+    };
+
+	sort() {
+	  int i, j, some;
+	  int maxfiles, maxruns[maxfiles+1], actruns[maxfiles+1];
+	  extern struct rec LastRec[];
+
+	  /*** Initialize input/output files ***/
+	  OpenRead(1);
+	  for (i = 2; i <= maxfiles; i++) OpenWrite(i);
+
+	  /*** Initialize maximum and actual count of runs ***/
+	  for (i = 0; i <= maxfiles; i++)
+	  {
+	      // Init runs to 0
+	      maxruns[i] = actruns[i] = 0;
+	  }
+	  maxruns[0] = maxruns[maxfiles] = 1;
+
+	  // Distribute runs across files - sets actruns????
+	  distribute();
+
+	  /*** Initialize merging phase ***/
+	  for (i = 2; i <= maxfiles; i++) {
+	    // Opens i for reading
+	    OpenRead(i);
+	    // Load first record into last buffer
+	    LastRec[i] = ReadFile(i);
+	  }
+	  for (i = 1; maxruns[0] > 1; i = (i % maxfiles) + 1) {
+	    // Merge into i
+	    OpenWrite(i);
+	    // Loop while there are runs remaining in next file
+	    while (maxruns[(i % maxfiles) + 1] > 0) {
+	      // Loop over all input files
+	      for (j = 1; j <= maxfiles; j++) {
+	        // Skip output file
+	        if (j != i) {
+              // File should be run?
+	          if (maxruns[j] > actruns[j]) {
+	            // Set to no input
+	            FilStat[j] = '-';
+	          } else {
+	            // Set to valid input
+	            FilStat[j] = 'i';
+	            // Run is consumed
+	            actruns[j]--;
+	            // We have some data to process
+	            some = TRUE;
+	          }
+	          // Number of runs decreases by one
+	          maxruns[j]--;
+	          //
+	          maxruns[0]--;
+	        }
+	      }
+	      // We have one more run on i
+	      maxruns[i]++;
+	      maxruns[0]++;
+	      if (some) {
+	        // Merge entries into i
+	        merge(i);
+	        // I has one more run
+	        actruns[i]++;
+	      }
+	    }
+	    OpenRead(i);
+	    LastRec[i] = ReadFile(i);
+	  };
+	  return (i == 1 ? maxfiles : i - 1);
+	};
