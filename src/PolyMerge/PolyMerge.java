@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import java.nio.file.StandardOpenOption;
@@ -29,7 +30,7 @@ class PolyMerge {
                 file.deleteOnExit();
                 // Add to lists
                 files.add(file);
-            }catch (IOException e) {
+            } catch (IOException e) {
                 System.err.println("Could not create temporary output files for writing");
                 System.exit(1);
             }
@@ -92,8 +93,10 @@ class PolyMerge {
         return null;
     }
 
-    private static int getNumRuns(BufferedReader inputFile) throws IOException {
-        inputFile.mark(0);
+    private static int getNumRuns() throws IOException {
+        // Open input file
+        BufferedReader inputFile = getInputFile();
+
         int runs = 0;
         boolean newRun = true;
         // Count the number of runs in the file so we can distribute correctly
@@ -113,7 +116,8 @@ class PolyMerge {
             runs++;
         }
 
-        inputFile.reset();
+        inputFile.close();
+
         return runs;
     }
 
@@ -140,7 +144,7 @@ class PolyMerge {
             int largest = state[ inputFiles - 1 ];
             sum = largest;
             // Loop for all files except the first
-            for(int i = inputFiles - 1; i >= 1; i++) {
+            for(int i = inputFiles - 1; i >= 1; i--) {
                 // Calculate the next number for ith input
                 state[i] = state[i-1] + largest;
                 // Increase sum
@@ -150,6 +154,8 @@ class PolyMerge {
             state[0] = largest;
         }
 
+        // Sort array so largest is second to last
+        Arrays.sort(state);
         return state;
     }
 
@@ -158,19 +164,18 @@ class PolyMerge {
      * @param outputFiles The list of temporary files to output to
      */
     private static int loadInputFiles(List<File> outputFiles) {
-        // Get input file
-        BufferedReader inputFile = getInputFile();
-
-        if(inputFile == null) {
-            System.err.println("Could not open input file for reading.");
-            System.exit(1);
-        }
-
-        // Number of runs to process
-        int runs = 0;
         try {
+            // Get input file
+            BufferedReader inputFile = getInputFile();
+
+            // Check input file is not null
+            if(inputFile == null) {
+                System.err.println("Could not open input file for reading.");
+                System.exit(1);
+            }
+
             // Calculate number of runs
-            runs = getNumRuns(inputFile);
+            int runs = getNumRuns();
 
             // Get distribution of runs
             int[] distribution = calcDistribution(outputFiles.size(), runs);
@@ -212,12 +217,13 @@ class PolyMerge {
             writer.close();
             // Close input file reader
             inputFile.close();
+
+            return runs;
         } catch (IOException e) {
             System.err.println("Error while loading input files.\n\n" + e.getMessage());
             System.exit(1);
+            return -1;
         }
-
-        return runs;
     }
 
     private static int runMergeIteration(List<File> allFiles, List<File> activeFiles, int runs) {
@@ -253,8 +259,8 @@ class PolyMerge {
 
         // List of currently active files
         List<File> activeFiles = files.subList(0, files.size() - 1);
-        while( runs > 0 ) {
-            runs = runMergeIteration( files, activeFiles, runs );
-        }
+//        while( runs > 0 ) {
+//            runs = runMergeIteration( files, activeFiles, runs );
+//        }
     }
 }
