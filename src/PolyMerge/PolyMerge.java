@@ -1,3 +1,10 @@
+/**
+ * Polyphase Sort Merge implementation
+ *
+ * Daniel Stokes - 1331134
+ * Morgan Dally - ???????
+ */
+
 package PolyMerge;
 
 import java.io.*;
@@ -226,6 +233,14 @@ class PolyMerge {
         }
     }
 
+    /**
+     * Loads first entry of next run into memory
+     * @param files The temporary files we are using
+     * @param inputReaders The input readers for current input arrays
+     * @param lastEntryArray The array to load next entries into
+     * @param outputIndex The current output index
+     * @throws IOException
+     */
     private static void loadNewRun(List<File> files, BufferedReader[] inputReaders, String[] lastEntryArray, int outputIndex) throws IOException {
         for(int i = 0; i < files.size(); i++) {
             if(i == outputIndex) {
@@ -246,6 +261,14 @@ class PolyMerge {
         }
     }
 
+    /**
+     * Outputs the smallest entry to the output file
+     * @param lastEntryArray The next entry in each of the streams
+     * @param output The output stream to write the smallest element to
+     * @param outputIdx The index of output stream
+     * @return The index of the smallest index
+     * @throws IOException
+     */
     private static int outputSmallest(String[] lastEntryArray, BufferedWriter output, int outputIdx) throws IOException {
         int smallestIdx = outputIdx == 0 ? 1 : 0;
         for(int i = 1; i < lastEntryArray.length; i++) {
@@ -263,6 +286,10 @@ class PolyMerge {
         return smallestIdx;
     }
 
+    /**
+     * Runs the polyphase merge on the specified files
+     * @param files The temporary working files
+     */
     private static void runPolyphaseMerge(List<File> files) {
         // Last file is first output file
         int numFiles = files.size();
@@ -314,10 +341,12 @@ class PolyMerge {
             BufferedReader reader = openReadFile(files.get(outputIndex));
             while (reader.ready()) {
                 String line = reader.readLine();
-                System.out.println(line);
+                if(!line.equals("")) {
+                    System.out.println(line);
+                }
             }
-            System.out.println();
-            System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
+//            System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
+            System.err.println(numIterations);
         } catch (IOException e) {
             System.err.println("Error while running polyphase merge.\n\n" + e.getMessage());
             System.exit(1);
@@ -325,6 +354,7 @@ class PolyMerge {
     }
 
     public static void main (String[] args) {
+        // Check input args
         if(args.length != 1) {
             System.err.println("Usage: java PolyMerge <number of files>");
             System.exit(1);
@@ -332,12 +362,14 @@ class PolyMerge {
 
         int numFiles = 0;
         try {
+            // Get number of files to use
             numFiles = Integer.parseInt(args[0]);
         }catch (NumberFormatException e) {
             System.err.println("Argument must be a valid integer");
             System.exit(1);
         }
 
+        // Check there are sufficient files
         if(numFiles <= 2) {
             System.err.println("Argument must be greater than 2");
             System.exit(1);
@@ -348,7 +380,8 @@ class PolyMerge {
         // Load input into output files
         int runs = loadInputFiles( files );
 
+        // Merge the files
         runPolyphaseMerge(files);
-        System.out.println("For " + runs + " runs");
+//        System.out.println("For " + runs + " runs");
     }
 }
