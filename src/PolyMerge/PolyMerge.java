@@ -271,10 +271,14 @@ class PolyMerge {
         String[] lastEntryArray = new String[numFiles];
         BufferedReader[] inputReaders = new BufferedReader[numFiles];
         try {
-            // Loop while there are runs remaining to process
+            // Get next output run
+            // The perfect distribution calculation means that this will always be the next file along
             int nextOutput = (outputIndex + 1) % numFiles;
+            // Loop while there are runs remaining to process
             do {
+                // Load first run
                 loadNewRun(files, inputReaders, lastEntryArray, outputIndex);
+                // Open new file for outputting
                 BufferedWriter output = openAndClearFile(files.get(outputIndex));
 
                 // Loop until next file runs out of runs
@@ -296,6 +300,7 @@ class PolyMerge {
                         lastEntryArray[smallestIdx] = inputReaders[smallestIdx].readLine();
                     }
                 }
+
                 // Number of iterations it took to complete read
                 numIterations++;
                 outputIndex = nextOutput;
@@ -308,7 +313,8 @@ class PolyMerge {
             outputIndex = ( outputIndex + numFiles - 1 ) % numFiles;
             BufferedReader reader = openReadFile(files.get(outputIndex));
             while (reader.ready()) {
-                System.out.println(reader.readLine());
+                String line = reader.readLine();
+                System.out.println(line);
             }
             System.out.println();
             System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
@@ -340,8 +346,9 @@ class PolyMerge {
         // Create temporary files
         List<File> files = getTemporaryOutputFiles( numFiles );
         // Load input into output files
-        loadInputFiles( files );
+        int runs = loadInputFiles( files );
 
         runPolyphaseMerge(files);
+        System.out.println("For " + runs + " runs");
     }
 }
