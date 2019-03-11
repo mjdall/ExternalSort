@@ -22,6 +22,10 @@ public class Heap <T extends Comparable<T>> {
 
     public int getHeapSize () { return heapSize; }
 
+    public int getMaxHeapSize () { return heap.length; }
+
+    public int getFreeNodes () { return heap.length - heapSize; }
+
     public T[] getHeap () { return heap; }
 
     private void buildHeap () {
@@ -56,7 +60,7 @@ public class Heap <T extends Comparable<T>> {
     }
 
     private void swapHeadAndTail () {
-        // error check?
+        if (heapSize <= 0) { return; }
         T head = heap[0];
         heap[0] = heap[heapSize - 1];
         heap[heapSize - 1] = head;
@@ -107,25 +111,6 @@ public class Heap <T extends Comparable<T>> {
         return modifiedIndex;
     }
 
-    public T remove () {
-        if (heapSize == 0) { return null; }
-        swapHeadAndTail();
-        heapSize--;
-        int insIndex = 0;
-        while (insIndex >= 0) { insIndex = trySwapDown(insIndex); }
-        return heap[heapSize];
-    }
-
-    public void hide () {
-        T curr = remove();
-        heap[heapSize] = curr;
-    }
-
-    public T check () {
-        if (heapSize == 0) { return null; }
-        return heap[0];
-    }
-
     public boolean insert (T newItem) {
         if (heapSize == heap.length) { return false; }
         int insIndex = heapSize;
@@ -136,6 +121,15 @@ public class Heap <T extends Comparable<T>> {
         return true;
     }
 
+    public T remove () {
+        if (heapSize == 0) { return null; }
+        swapHeadAndTail();
+        heapSize--;
+        int insIndex = 0;
+        while (insIndex >= 0) { insIndex = trySwapDown(insIndex); }
+        return heap[heapSize];
+    }
+
     public T replace (T newItem) {
         if (heapSize == 0) { return null; }
         int insertAt = 0;
@@ -143,5 +137,30 @@ public class Heap <T extends Comparable<T>> {
         heap[insertAt] = newItem;
         while (insertAt >= 0) { insertAt = trySwapDown(insertAt); }
         return curr;
+    }
+
+    public void hide () {
+        T curr = remove();
+        if (curr == null) { return; }
+        heap[heapSize] = curr;
+    }
+
+    public T check () {
+        if (heapSize == 0) { return null; }
+        return heap[0];
+    }
+
+    public int resetHeap () {
+        // get the first occurence of an item, this ideally should be the max size
+        int heapSize = heap.length;
+
+        while (heap[heapSize - 1] == null) { heapSize--; }
+        this.heapSize = heapSize;
+
+        // rebuild the heap
+        buildHeap();
+
+        // return the number of free slots in the heap
+        return heap.length - heapSize;
     }
 }
