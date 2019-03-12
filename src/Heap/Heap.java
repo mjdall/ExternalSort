@@ -29,7 +29,7 @@ public class Heap <T extends Comparable<T>> {
     public T[] getHeap () { return heap; }
 
     private void buildHeap () {
-        int startFrom = heapSize / 2 - 1;
+        int startFrom = getParentIndex(heapSize - 1);
         for (int i = startFrom; i >= 0; i--) {
             heapify(i);
         }
@@ -92,23 +92,23 @@ public class Heap <T extends Comparable<T>> {
 
         T currNode = heap[nodeIndex];
         T leftChild = heap[lIdx];
-
-        int leftComparison = comparer.compare(currNode, leftChild);
-        int highestPriority = leftComparison;
-        // if we have a left and a right child
+        T currCompareNode = leftChild;
+        int comparisonIndex = lIdx;
         if (checkIndex(rIdx)) {
             T rightChild = heap[rIdx];
-            highestPriority = Math.max(highestPriority, comparer.compare(currNode, rightChild));
+            if (comparer.compare(leftChild, rightChild) < 0) {
+                currCompareNode = rightChild;
+                comparisonIndex = rIdx;
+            }
         }
+        int parentCompare = comparer.compare(currNode, currCompareNode);
 
         // if smallest < 0 then the current item has less priority
-        if (highestPriority <= 0) { return -1; }
+        if (parentCompare <= 0) { return -1; }
 
-        // swap the values
-        int modifiedIndex = highestPriority == leftComparison ? lIdx : rIdx;
-        heap[nodeIndex] = heap[modifiedIndex];
-        heap[modifiedIndex] = currNode;
-        return modifiedIndex;
+        heap[nodeIndex] = heap[comparisonIndex];
+        heap[comparisonIndex] = currNode;
+        return comparisonIndex;
     }
 
     public boolean insert (T newItem) {
@@ -137,12 +137,6 @@ public class Heap <T extends Comparable<T>> {
         heap[insertAt] = newItem;
         while (insertAt >= 0) { insertAt = trySwapDown(insertAt); }
         return curr;
-    }
-
-    public void hide () {
-        T curr = remove();
-        if (curr == null) { return; }
-        heap[heapSize] = curr;
     }
 
     public T check () {

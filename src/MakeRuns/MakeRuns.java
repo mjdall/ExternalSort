@@ -3,6 +3,7 @@ package MakeRuns;
 import Heap.Comparers.StringComparer;
 import Heap.Heap;
 import Heap.Comparer;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -28,12 +29,6 @@ public class MakeRuns {
         }
         if (memorySize <= 0) { printAndExit("memory size has to be greater than zero"); }
         return  memorySize;
-    }
-
-    public static <T> T[] concat(T[] first, T[] second) {
-        T[] result = Arrays.copyOf(first, first.length + second.length);
-        System.arraycopy(second, 0, result, first.length, second.length);
-        return result;
     }
 
     private static BufferedWriter openAndClearFile (File file) throws IOException {
@@ -66,10 +61,18 @@ public class MakeRuns {
         }
     }
 
-    private static String[] tryReadLine (BufferedReader input) {
+    private static String tryReadLine (BufferedReader input) {
         try {
-            // todo cleanse input better, throw away lines that are just \n
-            return input.readLine().split("\\s+");
+            String line;
+            /*
+            read in a line, check it's not null,
+            if not null, remove multiple whitespaces
+             */
+            while (((line = input.readLine()) != null)
+                     && ((line = line.trim().replaceAll(" +", " ")) != "")
+                     && ("".equals(line)))
+            if (line == null) { return null; }
+            return line;
         } catch (java.io.IOException e) {
             printAndExit("rip");
             return null;
@@ -78,73 +81,82 @@ public class MakeRuns {
 
     private static void tryWriteLine (String toWrite, BufferedWriter output) {
         try {
-            output.write(toWrite);
+            output.write(toWrite + "\n");
         } catch (java.io.IOException e) {
             printAndExit("rip");
         }
     }
 
     private static String[] readInInitial (int runSize, BufferedReader input) {
-        int readInWords = 0;
-        String[] finalArray = new String[0];
-        while (readInWords < runSize) {
-            String[] readIn = tryReadLine(input);
-            finalArray = concat(finalArray, readIn);
-            readInWords += readIn.length;
+        String[] finalArray = new String[runSize];
+        for (int i = 0; i < runSize; i++) {
+            finalArray[i] = tryReadLine(input);
         }
         return finalArray;
     }
 
-    // cuurently debugging this method
-    // i think hide + resetting isn't working properly
-    // the method is stuck in a while loop forever atm
-    private static void consumeLine (String[] readFrom, Heap<String> priorityQueue, BufferedWriter oStream, Comparer comparer) {
-        String previous = priorityQueue.check();
-        tryWriteLine(previous, oStream);
-        String writeString = priorityQueue.check();
-        System.out.println(readFrom.length);
-        int readIndex = 0;
-        int runs = 0;
-        int runSize = 0;
-        while (readIndex < readFrom.length) {
-            if (comparer.compare(previous, writeString) < 0) {
-                priorityQueue.hide();
-            } else {
-                priorityQueue.replace(readFrom[readIndex]);
-                tryWriteLine(writeString, oStream);
-                previous = writeString;
-                readIndex++;
-            }
-            writeString = priorityQueue.check();
-//            System.out.println(writeString);
-            if (writeString == null) {
-                tryWriteLine("\n", oStream);
-                priorityQueue.resetHeap();
-                writeString = priorityQueue.check();
-                runs++;
-//                System.out.println(runSize);
-                runSize = 0;
-            }
-            runSize++;
+    private static void writeFinalQueue (Heap<String> priorityQueue, BufferedWriter oStream) {
+        tryWriteLine("", oStream);
+        priorityQueue.resetHeap();
+        String popped;
+        while ((popped = priorityQueue.remove()) != null) {
+            tryWriteLine(popped, oStream);
         }
-        if (writeString == null) {
-            tryWriteLine("\n", oStream);
-            priorityQueue.resetHeap();
-        }
+        tryWriteLine("", oStream);
+        System.out.println("Complete");
+        System.exit(0);
     }
 
     private static void runMakeRuns (int runSize, BufferedReader iStream, BufferedWriter oStream) {
         Comparer comparer = new StringComparer();
-        String[] replacementArray = readInInitial(runSize, iStream);
-        String[] initialHeapArray = Arrays.copyOfRange(replacementArray, 0, runSize);
-        replacementArray = Arrays.copyOfRange(replacementArray, runSize, replacementArray.length);
+        String[] initialHeapArray = readInInitial(runSize, iStream);
         Heap<String> priorityQueue = new Heap<String>(initialHeapArray, comparer);
-        consumeLine(replacementArray, priorityQueue, oStream, comparer);
-        int count = 0;
-        while ((replacementArray = tryReadLine(iStream)) != null) {
-             consumeLine(replacementArray, priorityQueue, oStream, comparer);
-             count++;
-             System.out.println(count);
+
+        String nextReplacement = tryReadLine(iStream);
+        String previous = priorityQueue.replace(nextReplacement);
+        String checkNext = priorityQueue.check();
+        while (true) {
+            int runCount = 0;
+            // while the previous had more priority than the next in the queue
+            runLoop:
+            while (comparer.compare(previous, checkNext) <= 0) {
+                // get the item that had less priority and write it
+                previous = priorityQueue.replace(nextReplacement);
+                tryWriteLine(previous, oStream);
+
+                // get the next item in the queue, this will never be null as we used replace before this
+                checkNext = priorityQueue.check();
+
+                // while the item we just found has more priority than the previous written item
+                while (comparer.compare(previous, checkNext) < 0) {
+                    priorityQueue.remove();
+                    checkNext = priorityQueue.check();
+
+                    // the queue has no more items in it
+                    if (checkNext == null) { break runLoop; }
+                }
+
+                // actually remove the item we were checking from the queue and replace it
+                priorityQueue.replace(nextReplacement);
+
+                // read in the next replacement line, if null, the stream has ended
+                if ((nextReplacement = tryReadLine(iStream)) == null) { writeFinalQueue(priorityQueue, oStream); }
+                runCount++;
+            }
+            //System.out.println("prev: " + previous.length() + " next: " + checkNext.length());
+//            System.out.println("run size: " + runCount);
+
+            // end of run - write new line to file
+            tryWriteLine("", oStream);
+
+            // reset the queue
+            priorityQueue.resetHeap();
+
+            // set our starting variables back up
+            previous = priorityQueue.replace(nextReplacement);
+            if ((nextReplacement = tryReadLine(iStream)) == null) { writeFinalQueue(priorityQueue, oStream); }
+            checkNext = priorityQueue.check();
+            tryWriteLine(previous, oStream);
         }
     }
 
