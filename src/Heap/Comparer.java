@@ -6,7 +6,7 @@ public interface Comparer <T> {
      * @param item1 - The item you are comparing with.
      * @param item2 - The item you compare in relation to item1.
      * @return Integer representing the priority difference of the two items.
-     *  Larger than 0 indicates that item1 is of higher priority than item2.
+     * Less than 0 means that item1 comes before item2. 0 means items are equal. >0 means item1 comes after item2
      */
     int compare(T item1, T item2);
 }

@@ -112,7 +112,7 @@ class PolyMerge {
             // Read next line
             String line = inputFile.readLine();
             // Empty line means end of run
-            if(line.equals("")) {
+            if(line.length() == 0) {
                 runs++;
                 newRun = true;
             }
@@ -199,7 +199,7 @@ class PolyMerge {
                 writer.write(line + "\n");
                 // Empty line means end of run
                 // Decrement number of runs needed to distribute
-                if(line.equals("") && --distribution[outputIndex] == 0) {
+                if(line.length() == 0 && --distribution[outputIndex] == 0) {
                     // Close writer
                     writer.close();
                     // Open next writer
@@ -272,14 +272,14 @@ class PolyMerge {
     private static int outputSmallest(String[] lastEntryArray, BufferedWriter output, int outputIdx) throws IOException {
         int smallestIdx = outputIdx == 0 ? 1 : 0;
         for(int i = 1; i < lastEntryArray.length; i++) {
-            if(i == outputIdx || lastEntryArray[i].equals("")) {
+            if(i == outputIdx || lastEntryArray[i].length() == 0) {
                 continue;
             }
-            if(lastEntryArray[i].compareTo(lastEntryArray[smallestIdx]) < 0 || lastEntryArray[smallestIdx].equals("")) {
+            if(lastEntryArray[i].compareTo(lastEntryArray[smallestIdx]) < 0 || lastEntryArray[smallestIdx].length() == 0) {
                 smallestIdx = i;
             }
         }
-        if(lastEntryArray[smallestIdx].equals("")) {
+        if(lastEntryArray[smallestIdx].length() == 0) {
             return -1;
         }
         output.write(lastEntryArray[smallestIdx] + "\n");
@@ -341,7 +341,7 @@ class PolyMerge {
             BufferedReader reader = openReadFile(files.get(outputIndex));
             while (reader.ready()) {
                 String line = reader.readLine();
-                if(!line.equals("")) {
+                if(line.length() != 0) {
                     System.out.println(line);
                 }
             }

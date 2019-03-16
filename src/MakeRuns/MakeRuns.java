@@ -63,16 +63,7 @@ public class MakeRuns {
 
     private static String tryReadLine (BufferedReader input) {
         try {
-            String line;
-            /*
-            read in a line, check it's not null,
-            if not null, remove multiple whitespaces
-             */
-            while (((line = input.readLine()) != null)
-                     && ((line = line.trim().replaceAll(" +", " ")) != "")
-                     && ("".equals(line)))
-            if (line == null) { return null; }
-            return line;
+            return input.readLine();
         } catch (java.io.IOException e) {
             printAndExit("rip");
             return null;
@@ -116,7 +107,7 @@ public class MakeRuns {
             String lastOut = null;
             while (iStream.ready() || priorityQueue.getHeapSize() > 0) {
                 String top = priorityQueue.check();
-                if(lastOut == null || comparer.compare(top, lastOut) <= 0) {
+                if(lastOut == null || comparer.compare(top, lastOut) >= 0) {
                     lastOut = top;
                     tryWriteLine(top, oStream);
                     if(iStream.ready())
@@ -133,6 +124,7 @@ public class MakeRuns {
                 }
             }
 
+            oStream.flush();
             iStream.close();
             oStream.close();
         } catch (IOException e) {

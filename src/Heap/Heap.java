@@ -31,33 +31,34 @@ public class Heap <T extends Comparable<T>> {
     private void buildHeap () {
         int startFrom = getParentIndex(heapSize - 1);
         for (int i = startFrom; i >= 0; i--) {
-            trySwapUp(i);
+            int insIndex = i;
+            while (insIndex >= 0) { insIndex = trySwapDown(insIndex); }
         }
     }
-
-    private void heapify (int fromIndex) {
-        T curr = heap[fromIndex];
-        int lIdx = getLeftChildIndex(fromIndex);
-        int rIdx = lIdx + 1;
-
-        if (!checkIndex(lIdx)) { return; }
-
-        T leftChild = heap[lIdx];
-        int leftComparison = comparer.compare(curr, leftChild);
-        int largest = leftComparison;
-
-        if (checkIndex(rIdx)) {
-            T rightChild = heap[rIdx];
-            largest = Math.max(leftComparison, comparer.compare(curr, rightChild));
-        }
-
-        if (largest <= 0) { return; }
-
-        int modifiedIndex = largest == leftComparison ? lIdx : rIdx;
-        heap[fromIndex] = heap[modifiedIndex];
-        heap[modifiedIndex] = curr;
-        heapify(modifiedIndex);
-    }
+//
+//    private void heapify (int fromIndex) {
+//        T curr = heap[fromIndex];
+//        int lIdx = getLeftChildIndex(fromIndex);
+//        int rIdx = lIdx + 1;
+//
+//        if (!checkIndex(lIdx)) { return; }
+//
+//        T leftChild = heap[lIdx];
+//        int leftComparison = comparer.compare(curr, leftChild);
+//        int largest = leftComparison;
+//
+//        if (checkIndex(rIdx)) {
+//            T rightChild = heap[rIdx];
+//            largest = Math.max(leftComparison, comparer.compare(curr, rightChild));
+//        }
+//
+//        if (largest <= 0) { return; }
+//
+//        int modifiedIndex = largest == leftComparison ? lIdx : rIdx;
+//        heap[fromIndex] = heap[modifiedIndex];
+//        heap[modifiedIndex] = curr;
+//        heapify(modifiedIndex);
+//    }
 
     private void swapHeadAndTail () {
         if (heapSize <= 0) { return; }
@@ -74,7 +75,7 @@ public class Heap <T extends Comparable<T>> {
         T parentItem = heap[parentIndex];
 
         // if the currentItem has a higher priority than it's parent
-        if (comparer.compare(parentItem, currentItem) <= 0) { return -1; }
+        if (comparer.compare(parentItem, currentItem) >= 0) { return -1; }
 
         heap[parentIndex] = currentItem;
         heap[nodeIndex] = parentItem;
@@ -96,7 +97,7 @@ public class Heap <T extends Comparable<T>> {
         int comparisonIndex = lIdx;
         if (checkIndex(rIdx)) {
             T rightChild = heap[rIdx];
-            if (comparer.compare(leftChild, rightChild) < 0) {
+            if (comparer.compare(leftChild, rightChild) > 0) {
                 currCompareNode = rightChild;
                 comparisonIndex = rIdx;
             }
