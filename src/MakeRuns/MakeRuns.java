@@ -108,55 +108,36 @@ public class MakeRuns {
     }
 
     private static void runMakeRuns (int runSize, BufferedReader iStream, BufferedWriter oStream) {
-        Comparer comparer = new StringComparer();
-        String[] initialHeapArray = readInInitial(runSize, iStream);
-        Heap<String> priorityQueue = new Heap<String>(initialHeapArray, comparer);
+        try {
+            Comparer comparer = new StringComparer();
+            String[] initialHeapArray = readInInitial(runSize, iStream);
+            Heap<String> priorityQueue = new Heap<String>(initialHeapArray, comparer);
 
-        String nextReplacement = tryReadLine(iStream);
-        String previous = priorityQueue.replace(nextReplacement);
-        String checkNext = priorityQueue.check();
-        while (true) {
-            int runCount = 0;
-            // while the previous had more priority than the next in the queue
-            runLoop:
-            while (comparer.compare(previous, checkNext) <= 0) {
-                // get the item that had less priority and write it
-                previous = priorityQueue.replace(nextReplacement);
-                tryWriteLine(previous, oStream);
-
-                // get the next item in the queue, this will never be null as we used replace before this
-                checkNext = priorityQueue.check();
-
-                // while the item we just found has more priority than the previous written item
-                while (comparer.compare(previous, checkNext) < 0) {
+            String lastOut = null;
+            while (iStream.ready() || priorityQueue.getHeapSize() > 0) {
+                String top = priorityQueue.check();
+                if(lastOut == null || comparer.compare(top, lastOut) <= 0) {
+                    lastOut = top;
+                    tryWriteLine(top, oStream);
+                    if(iStream.ready())
+                        priorityQueue.replace(tryReadLine(iStream));
+                    else
+                        priorityQueue.remove();
+                } else {
                     priorityQueue.remove();
-                    checkNext = priorityQueue.check();
-
-                    // the queue has no more items in it
-                    if (checkNext == null) { break runLoop; }
+                    if(priorityQueue.getHeapSize() == 0 && iStream.ready()) {
+                        lastOut = null;
+                        tryWriteLine("", oStream);
+                        priorityQueue.resetHeap();
+                    }
                 }
-
-                // actually remove the item we were checking from the queue and replace it
-                priorityQueue.replace(nextReplacement);
-
-                // read in the next replacement line, if null, the stream has ended
-                if ((nextReplacement = tryReadLine(iStream)) == null) { writeFinalQueue(priorityQueue, oStream); }
-                runCount++;
             }
-            //System.out.println("prev: " + previous.length() + " next: " + checkNext.length());
-//            System.out.println("run size: " + runCount);
 
-            // end of run - write new line to file
-            tryWriteLine("", oStream);
-
-            // reset the queue
-            priorityQueue.resetHeap();
-
-            // set our starting variables back up
-            previous = priorityQueue.replace(nextReplacement);
-            if ((nextReplacement = tryReadLine(iStream)) == null) { writeFinalQueue(priorityQueue, oStream); }
-            checkNext = priorityQueue.check();
-            tryWriteLine(previous, oStream);
+            iStream.close();
+            oStream.close();
+        } catch (IOException e) {
+            System.out.println("Error occured while generating runs\n\n" + e.getMessage());
+            System.exit(1);
         }
     }
 

@@ -31,7 +31,7 @@ public class Heap <T extends Comparable<T>> {
     private void buildHeap () {
         int startFrom = getParentIndex(heapSize - 1);
         for (int i = startFrom; i >= 0; i--) {
-            heapify(i);
+            trySwapUp(i);
         }
     }
 
