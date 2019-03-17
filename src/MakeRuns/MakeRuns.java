@@ -109,7 +109,11 @@ public class MakeRuns {
      */
     private static String tryReadLine (BufferedReader input) {
         try {
-            return input.readLine();
+            String line;
+            // Loop while line is empty
+            // Blank lines are not supported
+            while((line = input.readLine()) != null && line.length() == 0);
+            return line;
         } catch (java.io.IOException e) {
             printAndExit("Error reading from file\n\n" + e.getMessage());
             return null;
@@ -203,7 +207,7 @@ public class MakeRuns {
         int runSize = getHeapSize(args[0]);
         // Get input/output files
         String inputFilename = args[1];
-        String outputFilename = "./" + args[2];
+        String outputFilename = args[2];
         // Open files for reading and writing
         BufferedReader inStream = getInStream(inputFilename);
         BufferedWriter outStream = getOutStream(outputFilename);
