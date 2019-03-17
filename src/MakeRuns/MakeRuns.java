@@ -69,6 +69,10 @@ public class MakeRuns {
      */
     private static BufferedWriter getOutStream (String outputFilename) {
         try {
+            if(outputFilename.equals("-")) {
+                // Create stdout writer
+                return new BufferedWriter(new OutputStreamWriter(System.out));
+            }
             File outFile = new File(outputFilename);
             return openAndClearFile(outFile);
         } catch (java.io.IOException e) {
@@ -85,6 +89,10 @@ public class MakeRuns {
      */
     private static BufferedReader getInStream (String inputFilename) {
         try {
+            if(inputFilename.equals("-")) {
+                // Create stdin reader
+                return new BufferedReader(new InputStreamReader(System.in));
+            }
             File inFile = new File(inputFilename);
             return openReadFile(inFile);
         } catch (java.io.IOException e) {
