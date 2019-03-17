@@ -1,3 +1,10 @@
+/**
+ * String Comparer implementation
+ *
+ * Daniel Stokes - 1331134
+ * Morgan Dally - ???????
+ */
+
 package Heap.Comparers;
 
 import Heap.Comparer;

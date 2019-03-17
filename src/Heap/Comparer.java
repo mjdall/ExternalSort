@@ -1,3 +1,10 @@
+/**
+ * Comparer interface
+ *
+ * Daniel Stokes - 1331134
+ * Morgan Dally - ???????
+ */
+
 package Heap;
 
 public interface Comparer <T> {

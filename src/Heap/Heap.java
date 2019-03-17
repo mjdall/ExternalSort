@@ -1,3 +1,10 @@
+/**
+ * Heap implementation
+ *
+ * Daniel Stokes - 1331134
+ * Morgan Dally - ???????
+ */
+
 package Heap;
 
 // Make IntelliJ happy

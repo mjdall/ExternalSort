@@ -1,3 +1,10 @@
+/**
+ * Replacement Selection Strategy implementation
+ *
+ * Daniel Stokes - 1331134
+ * Morgan Dally - ???????
+ */
+
 package MakeRuns;
 
 import Heap.Comparers.StringComparer;
