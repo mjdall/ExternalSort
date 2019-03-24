@@ -110,22 +110,18 @@ public class MakeRuns {
     }
 
     /**
-     * Read line from input
+     * Read line from input, prefixing with -
      * @param input BufferedReader to read with
      * @return Line, or null if input is finished
      */
     private static String tryReadLine (BufferedReader input) {
         try {
-            String line;
-            // Loop while line is empty
-            // Blank lines are not supported
-            line = input.readLine();
+            String line = input.readLine();
             if(line == null) {
                 return null;
             }
-            // Suffix every line with a hyphen so empty lines can be used to delimit runs
-            // Suffix so that comparison does not always compare identical character
-            return line + "-";
+            // Prefix every line with a hyphen so empty lines can be used to delimit runs
+            return "-" + line;
         } catch (java.io.IOException e) {
             printAndExit("Error reading from file\n\n" + e.getMessage());
             return null;
