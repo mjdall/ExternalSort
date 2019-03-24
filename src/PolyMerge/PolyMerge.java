@@ -76,12 +76,14 @@ class PolyMerge {
         return Files.newBufferedReader(Paths.get(file.toURI()));
     }
 
+    private static String inputFile = "MakeRunsOutput.txt";
+
     /**
      * Opens the input file for reading
      * @return BufferedReader for reading input file with
      */
     private static BufferedReader getInputFile() {
-        File file = new File("MakeRunsOutput.txt");
+        File file = new File(inputFile);
 
         if(!file.exists()) {
             // Didn't find matching file
@@ -170,7 +172,7 @@ class PolyMerge {
      * Loads the input runs into the temporary files in the optimal distribution, leaving the last file empty
      * @param outputFiles The list of temporary files to output to
      */
-    private static int loadInputFiles(List<File> outputFiles) {
+    private static void loadInputFiles(List<File> outputFiles, int runs) {
         try {
             // Get input file
             BufferedReader inputFile = getInputFile();
@@ -181,8 +183,11 @@ class PolyMerge {
                 System.exit(1);
             }
 
-            // Calculate number of runs
-            int runs = getNumRuns();
+            if(runs == -1) {
+                // Calculate number of runs
+                runs = getNumRuns();
+                System.out.println("For " + runs + " runs");
+            }
 
             // Get distribution of runs
             int[] distribution = calcDistribution(outputFiles.size(), runs);
@@ -225,11 +230,9 @@ class PolyMerge {
             // Close input file reader
             inputFile.close();
 
-            return runs;
         } catch (IOException e) {
             System.err.println("Error while loading input files.\n\n" + e.getMessage());
             System.exit(1);
-            return -1;
         }
     }
 
@@ -342,7 +345,7 @@ class PolyMerge {
             while (reader.ready()) {
                 String line = reader.readLine();
                 if(line.length() != 0) {
-                    System.out.println(line);
+                    System.out.println(line.substring(0, line.length() - 1));
                 }
             }
 //            System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
@@ -355,8 +358,11 @@ class PolyMerge {
 
     public static void main (String[] args) {
         // Check input args
-        if(args.length != 1) {
-            System.err.println("Usage: java PolyMerge <number of files>");
+        if(args.length != 3) {
+            System.err.println("Usage: java PolyMerge <number of files> <number of runs> <input file>\n" +
+                    "\tNumber of files: The number of temporary files to use\n" +
+                    "\tNumber of runs: The number of runs in the input file. -1 if this should be calculated internally\n" +
+                    "\tInput file: The input file to use as the input runs");
             System.exit(1);
         }
 
@@ -365,23 +371,38 @@ class PolyMerge {
             // Get number of files to use
             numFiles = Integer.parseInt(args[0]);
         }catch (NumberFormatException e) {
-            System.err.println("Argument must be a valid integer");
+            System.err.println("Number of files must be a valid integer");
             System.exit(1);
         }
 
         // Check there are sufficient files
         if(numFiles <= 2) {
-            System.err.println("Argument must be greater than 2");
+            System.err.println("Number of files must be greater than 2");
             System.exit(1);
         }
+
+        int numRuns = 0;
+        try {
+            // Get number of files to use
+            numRuns = Integer.parseInt(args[1]);
+        }catch (NumberFormatException e) {
+            System.err.println("Number of runs must be a valid integer");
+            System.exit(1);
+        }
+
+        if(numRuns < 1 && numRuns != -1) {
+            System.err.println("Number of runs must be >=1 or -1");
+            System.exit(1);
+        }
+
+        inputFile = args[2];
 
         // Create temporary files
         List<File> files = getTemporaryOutputFiles( numFiles );
         // Load input into output files
-        int runs = loadInputFiles( files );
+        loadInputFiles( files, numRuns );
 
         // Merge the files
         runPolyphaseMerge(files);
-//        System.out.println("For " + runs + " runs");
     }
 }

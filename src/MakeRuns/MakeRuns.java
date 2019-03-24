@@ -119,8 +119,13 @@ public class MakeRuns {
             String line;
             // Loop while line is empty
             // Blank lines are not supported
-            while((line = input.readLine()) != null && line.length() == 0);
-            return line;
+            line = input.readLine();
+            if(line == null) {
+                return null;
+            }
+            // Suffix every line with a hyphen so empty lines can be used to delimit runs
+            // Suffix so that comparison does not always compare identical character
+            return line + "-";
         } catch (java.io.IOException e) {
             printAndExit("Error reading from file\n\n" + e.getMessage());
             return null;
@@ -167,6 +172,8 @@ public class MakeRuns {
             String[] initialHeapArray = readInInitial(runSize, iStream);
             Heap<String> priorityQueue = new Heap<String>(initialHeapArray, comparer);
 
+            int runs = 0;
+
             String lastOut = null;
             // Loop while there are values to process
             while (iStream.ready() || priorityQueue.getHeapSize() > 0) {
@@ -193,17 +200,20 @@ public class MakeRuns {
                         tryWriteLine("", oStream);
                         // Reset the heap
                         priorityQueue.resetHeap();
+                        runs++;
                     }
                 }
             }
+
+            runs++;
 
             // Close files
             oStream.flush();
             iStream.close();
             oStream.close();
+            System.out.println("Produced " + runs + " runs");
         } catch (IOException e) {
-            System.out.println("Error occured while generating runs\n\n" + e.getMessage());
-            System.exit(1);
+            printAndExit("Error occured while generating runs\n\n" + e.getMessage());
         }
     }
 
