@@ -345,7 +345,7 @@ class PolyMerge {
             while (reader.ready()) {
                 String line = reader.readLine();
                 if(line.length() != 0) {
-                    System.out.println(line.substring(0, line.length() - 1));
+                    System.out.println(line.substring(1));
                 }
             }
 //            System.out.println("Required: " + numIterations + " polyphase merge iterations to sort output");
