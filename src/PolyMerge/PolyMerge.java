@@ -12,9 +12,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import java.nio.file.StandardOpenOption;
+
+import Heap.Heap;
 
 class PolyMerge {
 
@@ -236,15 +239,37 @@ class PolyMerge {
         }
     }
 
+    private static class HeapEntry {
+        private String string;
+        private int fileIndex;
+
+        public String getString() {
+            return string;
+        }
+
+        public int getFileIndex() {
+            return fileIndex;
+        }
+
+        public HeapEntry(String _string, int _fileIndex) {
+            string = _string;
+            fileIndex = _fileIndex;
+        }
+    }
+
     /**
      * Loads first entry of next run into memory
      * @param files The temporary files we are using
      * @param inputReaders The input readers for current input arrays
-     * @param lastEntryArray The array to load next entries into
+     * @param lastEntryHeap The heap containing the entries
      * @param outputIndex The current output index
      * @throws IOException
      */
-    private static void loadNewRun(List<File> files, BufferedReader[] inputReaders, String[] lastEntryArray, int outputIndex) throws IOException {
+    private static void loadNewRun(List<File> files, BufferedReader[] inputReaders, Heap<HeapEntry> lastEntryHeap, int outputIndex) throws IOException {
+        if(lastEntryHeap.getHeapSize() != 0 ) {
+            System.err.println("Unprocessed items were about to be overwritten");
+            System.exit(1);
+        }
         for(int i = 0; i < files.size(); i++) {
             if(i == outputIndex) {
                 // Close old input if changed
@@ -252,41 +277,18 @@ class PolyMerge {
                     inputReaders[i].close();
                 }
                 inputReaders[i] = null;
-                lastEntryArray[i] = null;
             } else {
                 if(inputReaders[i] == null) {
                     // Open file if null
                     inputReaders[i] = openReadFile(files.get(i));
                 }
                 // Read next entry
-                lastEntryArray[i] = inputReaders[i].readLine();
+                String line = inputReaders[i].readLine();
+                if(line.length() > 0) {
+                    lastEntryHeap.insert(new HeapEntry(line, i));
+                }
             }
         }
-    }
-
-    /**
-     * Outputs the smallest entry to the output file
-     * @param lastEntryArray The next entry in each of the streams
-     * @param output The output stream to write the smallest element to
-     * @param outputIdx The index of output stream
-     * @return The index of the smallest index
-     * @throws IOException
-     */
-    private static int outputSmallest(String[] lastEntryArray, BufferedWriter output, int outputIdx) throws IOException {
-        int smallestIdx = outputIdx == 0 ? 1 : 0;
-        for(int i = 1; i < lastEntryArray.length; i++) {
-            if(i == outputIdx || lastEntryArray[i].length() == 0) {
-                continue;
-            }
-            if(lastEntryArray[i].compareTo(lastEntryArray[smallestIdx]) < 0 || lastEntryArray[smallestIdx].length() == 0) {
-                smallestIdx = i;
-            }
-        }
-        if(lastEntryArray[smallestIdx].length() == 0) {
-            return -1;
-        }
-        output.write(lastEntryArray[smallestIdx] + "\n");
-        return smallestIdx;
     }
 
     /**
@@ -298,7 +300,7 @@ class PolyMerge {
         int numFiles = files.size();
         int outputIndex = numFiles - 1;
         int numIterations = 0;
-        String[] lastEntryArray = new String[numFiles];
+        Heap<HeapEntry> lastEntryHeap = new Heap<>(new HeapEntry[numFiles], Comparator.comparing(HeapEntry::getString));
         BufferedReader[] inputReaders = new BufferedReader[numFiles];
         try {
             // Get next output run
@@ -307,14 +309,13 @@ class PolyMerge {
             // Loop while there are runs remaining to process
             do {
                 // Load first run
-                loadNewRun(files, inputReaders, lastEntryArray, outputIndex);
+                loadNewRun(files, inputReaders, lastEntryHeap, outputIndex);
                 // Open new file for outputting
                 BufferedWriter output = openAndClearFile(files.get(outputIndex));
 
                 // Loop until next file runs out of runs
                 while (true) {
-                    int smallestIdx = outputSmallest(lastEntryArray, output, outputIndex);
-                    if(smallestIdx == -1) {
+                    if(lastEntryHeap.getHeapSize() == 0) {
                         // All files have reached the end of their runs
                         // Write new line to signify run end in output file
                         output.write("\n");
@@ -324,10 +325,19 @@ class PolyMerge {
                             break;
                         }
                         // Process next run
-                        loadNewRun(files, inputReaders, lastEntryArray, outputIndex);
+                        loadNewRun(files, inputReaders, lastEntryHeap, outputIndex);
                     } else {
                         // Load next element in the run
-                        lastEntryArray[smallestIdx] = inputReaders[smallestIdx].readLine();
+                        HeapEntry smallest = lastEntryHeap.peek();
+                        output.write(smallest.getString() + "\n");
+                        String nextLine = inputReaders[smallest.getFileIndex()].readLine();
+                        if(nextLine.length() == 0) {
+                            // Remove element from heap
+                            lastEntryHeap.remove(false);
+                        } else {
+                            // Replace element with nex line from file
+                            lastEntryHeap.replace(new HeapEntry(nextLine, smallest.getFileIndex()));
+                        }
                     }
                 }
 

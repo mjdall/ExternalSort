@@ -7,9 +7,7 @@
 
 package MakeRuns;
 
-import Heap.Comparers.StringComparer;
 import Heap.Heap;
-import Heap.Comparer;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -164,9 +162,8 @@ public class MakeRuns {
     private static void runMakeRuns (int runSize, BufferedReader iStream, BufferedWriter oStream) {
         try {
             // Read in initial values and create heap
-            Comparer comparer = new StringComparer();
             String[] initialHeapArray = readInInitial(runSize, iStream);
-            Heap<String> priorityQueue = new Heap<String>(initialHeapArray, comparer);
+            Heap<String> priorityQueue = new Heap<>(initialHeapArray, String::compareTo);
 
             int runs = 0;
 
@@ -176,7 +173,7 @@ public class MakeRuns {
                 // Get next value
                 String top = priorityQueue.peek();
                 // Check if value can be written to output stream
-                if(lastOut == null || comparer.compare(top, lastOut) >= 0) {
+                if(lastOut == null || top.compareTo(lastOut) >= 0) {
                     // Write value out
                     lastOut = top;
                     tryWriteLine(top, oStream);
@@ -189,19 +186,17 @@ public class MakeRuns {
                 } else {
                     // Remove from the heap, saving the value at the end of the array
                     priorityQueue.remove(true);
-                    // Check if we have processed all the elements
-                    if(priorityQueue.getHeapSize() == 0) {
-                        // Start next run
-                        lastOut = null;
-                        tryWriteLine("", oStream);
-                        // Reset the heap
-                        priorityQueue.resetHeap();
-                        runs++;
-                    }
+                }
+                // Check if we have processed all the elements
+                if(priorityQueue.getHeapSize() == 0) {
+                    // Start next run
+                    lastOut = null;
+                    tryWriteLine("", oStream);
+                    // Reset the heap
+                    priorityQueue.resetHeap();
+                    runs++;
                 }
             }
-
-            runs++;
 
             // Close files
             oStream.flush();

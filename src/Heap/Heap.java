@@ -7,17 +7,16 @@
 
 package Heap;
 
-// Make IntelliJ happy
-import Heap.Comparer;
+import java.util.Comparator;
 
 // TODO: Do I need to handle error conditions?
 
-public class Heap <T extends Comparable<T>> {
+public class Heap <T> {
     private int heapSize;
     private T[] heap;
-    private Comparer comparer;
+    private Comparator<T> comparer;
 
-    public Heap (T[] rawArray, Comparer comparisonFunction) {
+    public Heap (T[] rawArray, Comparator<T> comparisonFunction) {
         // Set members
         this.comparer = comparisonFunction;
         this.heap = rawArray;
@@ -130,7 +129,7 @@ public class Heap <T extends Comparable<T>> {
         T parentItem = heap[parentIndex];
 
         // Check if we need to swap
-        if (comparer.compare(parentItem, currentItem) >= 0) { return -1; }
+        if (comparer.compare(parentItem, currentItem) <= 0) { return -1; }
 
         // Swap with parent
         heap[parentIndex] = currentItem;
@@ -263,6 +262,8 @@ public class Heap <T extends Comparable<T>> {
                 shift++;
             } else {
                 heap[i-shift] = heap[i];
+                if(shift > 0)
+                    heap[i] = null;
             }
         }
         // Calculate new heap size
